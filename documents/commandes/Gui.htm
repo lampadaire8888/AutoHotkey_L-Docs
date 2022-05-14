@@ -1,0 +1,384 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<title>Gui - Syntax &amp; Usage | AutoHotkey</title>
+<meta name="description" content="The Gui command creates and manages windows and controls. Such windows can be used as data entry forms or custom user interfaces." />
+<meta name="ahk:equiv-v2" content="objects/Gui.htm" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link href="../static/theme.css" rel="stylesheet" type="text/css" />
+<script src="../static/content.js" type="text/javascript"></script>
+</head>
+<body>
+
+<h1>GUI</h1>
+
+<p>Creates and manages windows and controls. Such windows can be used as data entry forms or custom user interfaces.</p>
+<pre clas/span>, <a href="#SubCommands">SubCommand</a> <span class="optional">, Value1, Value2, Value3</span></pre>
+<p>The <em>SubCommand</em>, <em>Value1</em>, <em>Value2</em> and <em>Value3</em> parameters are dependent upon each other and their usage is described below.</p>
+
+<h2 id="toc">Table of Contents</h2>
+<ul>
+    <li><a href="#SubCommands">Sub-commands</a></li>
+    <li><a href="#ControlOptions">Options for a Control (Gui Add)</a><ul>
+      <li><a href="#PosSize">Positioning and Sizing of Controls</a></li>
+      <li><a href="#Events">Storing and Responding to User Input</a></li>
+      <li><a href="#OtherOptions">Controls: Common Styles and Other Options</a></li>
+    </ul></li>
+    <li><a href="#Labels">Window Events</a>: <a href="#GuiClose">GuiClose</a> | <a href="#GuiEscape">GuiEscape</a> | <a href="#GuiSize">GuiSize</a> | <a href="#GuiContextMenu">GuiContextMenu</a> | <a href="#GuiDropFiles">GuiDropFiles</a></li>
+    <li><a href="#MultiWin">Creating Multiple GUI windows</a></li>
+    <li><a href="#DefaultWin">GUI Events, Threads, and Subroutines</a></li>
+    <li><a href="#Navigate">Keyboard Navigation</a></li>
+    <li><a href="#Appear">Window Appearance</a></li>
+    <li><a href="#GenRemarks">General Remarks</a></li>
+    <li><a href="#Examples">Examples</a></li>
+</ul>
+
+<h2 id="SubCommands">Sub-commands</h2>
+<p>For <em>SubCommand</em>, specify one of the following:</p>
+<ul>
+    <li><a href="#New">New</a> <span class="ver">[
+<h2 id="Related">Related</h2>
+<p><a href="GuiControl.htm">GuiControl</a>, <a href="GuiControlGet.htm">GuiControlGet</a>, <a href="Menu.htm">Menu</a>, <a href="GuiControls.htm">Control Types</a>, <a href="ListView.htm">ListView</a>, <a href="TreeView.htm">TreeView</a>, <a href="Control.htm">Control</a>, <a href="ControlGet.htm">ControlGet</a>, <a href="Progress.htm">SplashImage</a>, <a href="MsgBox.htm">MsgBox</a>, <a href="FileSelectFile.htm">FileSelectFile</a>, <a href="FileSelectFolder.htm">FileSelectFolder</a></p>
+
+<h2 id="Examples">Examples</h2>
+
+<div class="ex" id="ExPopup">
+<p><a class="ex_number" href="#ExPopup"></a> Creates a popup window similar to <a href="SplashTextOn.htm">SplashTextOn</a>.</p>
+<pre>Gui, +AlwaysOnTop +Disabled -SysMenu +Owner  <em>; +Owner avoids a taskbar button.</em>
+Gui, Add, Text,, Some text to display.
+Gui, Show, NoActivate, Title of Window  <em>; NoActivate avoids deactivating the currently active window.</em></pre>
+</div>
+
+<div class="ex" id="ExInputBox">
+<p><a class="ex_number" href="#ExInputBox"></a> Creates a simple input-box that asks for the first and last name.</p>
+<pre>Gui, Add, Text,, First name:
+Gui, Add, Text,, Last name:
+Gui, Add, Edit, vFirstName ym  <em>; The ym option starts a new column of controls.</em>
+Gui, Add, Edit, vLastName
+Gui, Add, Button, default, OK  <em>; The label ButtonOK (if it exists) will be run when the button is pressed.</em>
+Gui, Show,, Simple Input Example
+return  <em>; End of auto-execute section. The script is idle until the user does something.</em>
+
+GuiClose:
+ButtonOK:
+Gui, Submit  <em>; Save the input from the user to each control's associated variable.</em>
+MsgBox You entered "%FirstName% %LastName%".
+ExitApp</pre>
+</div>
+
+<div class="ex" id="ExTab">
+<p><a class="ex_number" href="#ExTab"></a> Creates a tab control with multiple tabs, each containing different controls to interact with.</p>
+<pre>Gui, Add, Tab2,, First Tab|Second Tab|Third Tab  <em>; Tab2 vs. Tab requires <span class="ver">[v1.0.47.05+]</span>.</em>
+Gui, Add, Checkbox, vMyCheckbox, Sample checkbox
+Gui, Tab, 2
+Gui, Add, Radio, vMyRadio, Sample radio1
+Gui, Add, Radio,, Sample radio2
+Gui, Tab, 3
+Gui, Add, Edit, vMyEdit r5  <em>; r5 means 5 rows tall.</em>
+Gui, Tab  <em>; i.e. subsequently-added controls will not belong to the tab control.</em>
+Gui, Add, Button, default xm, OK  <em>; xm puts it at the bottom left corner.</em>
+Gui, Show
+return
+
+ButtonOK:
+GuiClose:
+GuiEscape:
+Gui, Submit  <em>; Save each control's contents to its associated variable.</em>
+MsgBox You entered:`n%MyCheckbox%`n%MyRadio%`n%MyEdit%
+ExitApp</pre>
+</div>
+
+<div class="ex" id="ExListBox">
+<p><a class="ex_number" href="#ExListBox"></a> Creates a ListBox control containing files in a directory.</p>
+<pre>Gui, Add, Text,, Pick a file to launch from the list below.`nTo cancel, press ESCAPE or close this window.
+Gui, Add, ListBox, vMyListBox gMyListBox w640 r10
+Gui, Add, Button, Default, OK
+Loop, C:\*.*  <em>; Change this folder and wildcard pattern to suit your preferences.</em>
+{
+    GuiControl,, MyListBox, %A_LoopFileFullPath%
+}
+Gui, Show
+return
+
+MyListBox:
+if (A_GuiEvent != "DoubleClick")
+    return
+<em>; Otherwise, the user double-clicked a list item, so treat that the same as pressing OK.
+; So fall through to the next label.</em>
+ButtonOK:
+GuiControlGet, MyListBox  <em>; Retrieve the ListBox's current selection.</em>
+MsgBox, 4,, Would you like to launch the file or document below?`n`n%MyListBox%
+IfMsgBox, No
+    return
+<em>; Otherwise, try to launch it:</em>
+Run, %MyListBox%,, UseErrorLevel
+if (ErrorLevel = "ERROR")
+    MsgBox Could not launch the specified file. Perhaps it is not associated with anything.
+return
+
+GuiClose:
+GuiEscape:
+ExitApp</pre>
+</div>
+
+<div class="ex" id="ExToolTip">
+<p><a class="ex_number" href="#ExToolTip"></a> Displays a context-sensitive help (via ToolTip) whenever the user moves the mouse over a particular control.</p>
+<pre>Gui, Add, Edit, v<strong>MyEdit</strong>
+<strong>MyEdit</strong>_TT := "This is a tooltip for the control whose variable is MyEdit."
+Gui, Add, DropDownList, v<strong>MyDDL</strong>, Red|Green|Blue
+<strong>MyDDL</strong>_TT := "Choose a color from the drop-down list."
+Gui, Add, Checkbox, vMyCheck, This control has no tooltip.
+Gui, Show
+<a href="OnMessage.htm">OnMessage</a>(0x0200, "WM_MOUSEMOVE")
+return
+
+WM_MOUSEMOVE()
+{
+    static CurrControl, PrevControl, _TT  <em>; _TT is kept blank for use by the ToolTip command below.</em>
+    CurrControl := A_GuiControl
+    if (CurrControl != PrevControl and not InStr(CurrControl, " "))
+    {
+        ToolTip  <em>; Turn off any previous tooltip.</em>
+        SetTimer, DisplayToolTip, 1000
+        PrevControl := CurrControl
+    }
+    return
+
+    DisplayToolTip:
+    SetTimer, DisplayToolTip, Off
+    <a href="ToolTip.htm">ToolTip</a> % %CurrControl%_TT  <em>; The leading percent sign tell it to use an expression.</em>
+    SetTimer, RemoveToolTip, 3000
+    return
+
+    RemoveToolTip:
+    SetTimer, RemoveToolTip, Off
+    ToolTip
+    return
+}
+
+
+GuiClose:
+ExitApp</pre>
+</div>
+
+<div class="ex" id="OSD">
+<p><a class="ex_number" href="#OSD"></a> Creates an On-screen display (OSD) via transparent window.</p>
+<pre>CustomColor := "EEAA99"  <em>; Can be any RGB color (it will be made transparent below).</em>
+Gui +LastFound +AlwaysOnTop -Caption +ToolWindow  <em>; +ToolWindow avoids a taskbar button and an alt-tab menu item.</em>
+Gui, Color, %CustomColor%
+Gui, Font, s32  <em>; Set a large font size (32-point).</em>
+Gui, Add, Text, vMyText cLime, XXXXX YYYYY  <em>; XX &amp; YY serve to auto-size the window.
+; Make all pixels of this color transparent and make the text itself translucent (150):</em>
+WinSet, TransColor, %CustomColor% 150
+SetTimer, UpdateOSD, 200
+Gosub, UpdateOSD  <em>; Make the first update immediate rather than waiting for the timer.</em>
+Gui, Show, x0 y400 NoActivate  <em>; NoActivate avoids deactivating the currently active window.</em>
+return
+
+UpdateOSD:
+MouseGetPos, MouseX, MouseY
+GuiControl,, MyText, X%MouseX%, Y%MouseY%
+return</pre>
+</div>
+
+<div class="ex" id="ExProgressBar">
+<p><a class="ex_number" href="#ExProgressBar"></a> Creates a moving progress bar overlayed on a background image.</p>
+<pre>Gui, Color, White
+Gui, Add, Picture, x0 y0 h350 w450, %A_WinDir%\system32\ntimage.gif
+Gui, Add, Button, Default xp+20 yp+250, Start the Bar Moving
+Gui, Add, Progress, vMyProgress w416
+Gui, Add, Text, vMyText wp  <em>; wp means "use width of previous".</em>
+Gui, Show
+return
+
+ButtonStartTheBarMoving:
+Loop, %A_WinDir%\*.*
+{
+    if (A_Index &gt; 100)
+        break
+    GuiControl,, MyProgress, %A_Index%
+    GuiControl,, MyText, %A_LoopFileName%
+    Sleep 50
+}
+GuiControl,, MyText, Bar finished.
+return
+
+GuiClose:
+ExitApp</pre>
+</div>
+
+<div class="ex" id="ExImageViewer">
+<p><a class="ex_number" href="#ExImageViewer"></a> Creates a simple image viewer.</p>
+<pre>Gui, +Resize
+Gui, Add, Button, default, &amp;Load New Image
+Gui, Add, Radio, ym+5 x+10 vRadio checked, Load &amp;actual size
+Gui, Add, Radio, ym+5 x+10, Load to &amp;fit screen
+Gui, Add, Pic, xm vPic
+Gui, Show
+return
+
+ButtonLoadNewImage:
+FileSelectFile, file,,, Select an image:, Images (*.gif; *.jpg; *.bmp; *.png; *.tif; *.ico; *.cur; *.ani; *.exe; *.dll)
+if not file
+    return
+Gui, Submit, NoHide <em>; Save the values of the radio buttons.</em>
+if (Radio = 1)  <em>; Display image at its actual size.</em>
+{
+    Width := 0
+    Height := 0
+}
+else <em>; Second radio is selected: Resize the image to fit the screen.</em>
+{
+    Width := A_ScreenWidth - 28  <em>; Minus 28 to allow room for borders and margins inside.</em>
+    Height := -1  <em>; "Keep aspect ratio" seems best.</em>
+}
+GuiControl,, Pic, *w%width% *h%height% %file%  <em>; Load the image.</em>
+Gui, Show, xCenter y0 AutoSize, %file%  <em>; Resize the window to match the picture size.</em>
+return
+
+GuiClose:
+ExitApp</pre>
+</div>
+
+<div class="ex" id="ExEditor">
+<p><a class="ex_number" href="#ExEditor"></a> Creates a simple text editor with menu bar.</p>
+<pre><em>; Create the sub-menus for the menu bar:</em>
+Menu, FileMenu, Add, &amp;New, FileNew
+Menu, FileMenu, Add, &amp;Open, FileOpen
+Menu, FileMenu, Add, &amp;Save, FileSave
+Menu, FileMenu, Add, Save &amp;As, FileSaveAs
+Menu, FileMenu, Add  <em>; Separator line.</em>
+Menu, FileMenu, Add, E&amp;xit, FileExit
+Menu, HelpMenu, Add, &amp;About, HelpAbout
+
+<em>; Create the menu bar by attaching the sub-menus to it:</em>
+Menu, MyMenuBar, Add, &amp;File, :FileMenu
+Menu, MyMenuBar, Add, &amp;Help, :HelpMenu
+
+<em>; Attach the menu bar to the window:</em>
+Gui, Menu, MyMenuBar
+
+<em>; Create the main Edit control and display the window:</em>
+Gui, +Resize  <em>; Make the window resizable.</em>
+Gui, Add, Edit, vMainEdit WantTab W600 R20
+Gui, Show,, Untitled
+CurrentFileName := ""  <em>; Indicate that there is no current file.</em>
+return
+
+FileNew:
+GuiControl,, MainEdit  <em>; Clear the Edit control.</em>
+return
+
+FileOpen:
+Gui +OwnDialogs  <em>; Force the user to dismiss the FileSelectFile dialog before returning to the main window.</em>
+FileSelectFile, SelectedFileName, 3,, Open File, Text Documents (*.txt)
+if not SelectedFileName  <em>; No file selected.</em>
+    return
+Gosub FileRead
+return
+
+FileRead:  <em>; Caller has set the variable SelectedFileName for us.</em>
+FileRead, MainEdit, %SelectedFileName%  <em>; Read the file's contents into the variable.</em>
+if ErrorLevel
+{
+    MsgBox Could not open "%SelectedFileName%".
+    return
+}
+GuiControl,, MainEdit, %MainEdit%  <em>; Put the text into the control.</em>
+CurrentFileName := SelectedFileName
+Gui, Show,, %CurrentFileName%   <em>; Show file name in title bar.</em>
+return
+
+FileSave:
+if not CurrentFileName   <em>; No filename selected yet, so do Save-As instead.</em>
+    Goto FileSaveAs
+Gosub SaveCurrentFile
+return
+
+FileSaveAs:
+Gui +OwnDialogs  <em>; Force the user to dismiss the FileSelectFile dialog before returning to the main window.</em>
+FileSelectFile, SelectedFileName, S16,, Save File, Text Documents (*.txt)
+if not SelectedFileName  <em>; No file selected.</em>
+    return
+CurrentFileName := SelectedFileName
+Gosub SaveCurrentFile
+return
+
+SaveCurrentFile:  <em>; Caller has ensured that CurrentFileName is not blank.</em>
+if FileExist(CurrentFileName)
+{
+    FileDelete %CurrentFileName%
+    if ErrorLevel
+    {
+        MsgBox The attempt to overwrite "%CurrentFileName%" failed.
+        return
+    }
+}
+GuiControlGet, MainEdit  <em>; Retrieve the contents of the Edit control.</em>
+FileAppend, %MainEdit%, %CurrentFileName%  <em>; Save the contents to the file.
+; Upon success, Show file name in title bar (in case we were called by FileSaveAs):</em>
+Gui, Show,, %CurrentFileName%
+return
+
+HelpAbout:
+Gui, About:+owner1  <em>; Make the main window (Gui #1) the owner of the "about box".</em>
+Gui +Disabled  <em>; Disable main window.</em>
+Gui, About:Add, Text,, Text for about box.
+Gui, About:Add, Button, Default, OK
+Gui, About:Show
+return
+
+AboutButtonOK:  <em>; This section is used by the "about box" above.</em>
+AboutGuiClose:
+AboutGuiEscape:
+Gui, 1:-Disabled  <em>; Re-enable the main window (must be done prior to the next step).</em>
+Gui Destroy  <em>; Destroy the about box.</em>
+return
+
+GuiDropFiles:  <em>; Support drag &amp; drop.</em>
+Loop, Parse, A_GuiEvent, `n
+{
+    SelectedFileName := A_LoopField  <em>; Get the first file only (in case there's more than one).</em>
+    break 
+<em>; Otherwise, the window has been resized or maximized. Resize the Edit control to match.</em>
+NewWidth := A_GuiWidth - 20
+NewHeight := A_GuiHeight - 20
+GuiControl, Move, MainEdit, W%NewWidth% H%NewHeight%
+
+GuiClose:  <em>; User closed the window.</em>Gui, Add, Text,, ------------------------------------------Key Delay-----------------------------------------
+Gui, Add, Edit, w300 vKeyDelay, 100
+Gui, Add, Text,, ----------------------------------------Piano Music-----------------------------------------
+Gui, Add, Edit, R10 w300 vPianoMusic
+Gui, Add, Text,, 								  F4 To Play Piano Music
+Gui, Add, Text,, 								Press F8 To Suspend/Resume
+Gui, Add, Text,, 								  Edited by WalkerOnly
+Gui, Show
+F4::
+!F4::
+Gui, Submit, Nohide
+PianoMusic := RegExReplace(PianoMusic, "`n|`r|/") ; Remove Stuff
+X := 1
+while (X:=RegExMatch(PianoMusic, "U)(\[.*]|.)",Keys, X))
+{	
+	X+=StrLen(Keys)
+	Keys := Trim(Keys, "[]")
+	SendInput % Keys
+	Sleep, %KeyDelay%
+}
+return
+
+f8::
+
+Pause
+
+Suspend
+
+return
+
+GuiClose:
+	ExitApp
+ExitApp</pre>
+</div>
+</body>
+</html>
